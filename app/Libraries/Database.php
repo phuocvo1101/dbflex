@@ -15,7 +15,7 @@ class Database extends \PDO {
     protected  $host='localhost';
     protected $user='root';
     protected $pass='';
-    protected $db='tradedoubler';
+    protected $db='dbflex';
     //khoi tao lop ket noi den CSDL
 
     public function __construct()

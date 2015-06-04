@@ -60,10 +60,19 @@ $config = Zend_Registry::getInstance()->get('dbflexIni');
 
 $configName = strtolower($networkName);
 $credentials = $config->$configName->toArray();
+$params = array();
+$params['username'] = $credentials['user'];
+$params['password'] = $credentials['password'];
+$params['ewayKey'] = $credentials['ewayKey'];
+$params['ewayPassword'] = $credentials['ewayPassword'];
 
-$invoice = new \Models\InvoiceModel();
-$result = $invoice->listModel($credentials['user'],$credentials['password']);
-$return = $invoice->insert($result);
+$invoice = new \Models\InvoiceModel($params);
+$invoices = $invoice->listModel();
+echo "Total Records:". count($invoices)."\n";
+//var_dump($invoices);die();
+$return = $invoice->payments($invoices);
+
+//$return = $invoice->insert($result);
 if(!$return) {
     echo 'Import was not successfull'."\n";
     exit();
