@@ -2,9 +2,9 @@
 namespace Configs;
 
 
-use Controllers\ReportController;
-use Controllers\DashBoardController;
-use Controllers\ProductController;
+use Controllers\SettingController;
+use Controllers\UserController;
+
 class Routing {
     protected  $baseController;
     protected  $content;
@@ -15,38 +15,46 @@ class Routing {
 
     public function getRouting()
     {
+
+        $layout='layout.tpl';
         if(isset($_GET["controller"]) && isset($_GET['action'])) {
 
             switch($_GET["controller"]) {
-
-                case "report":
-                    $this->baseController = new ReportController();
+                case "setting":
+                    $this->baseController = new SettingController();
                     break;
-                case "product":
-                    $this->baseController = new ProductController();
-                    break;
-                case "dashboard":
-                    $this->baseController = new DashBoardController();
+                case "user":
+                    $this->baseController = new UserController();
                     break;
                 default:
-                    $this->baseController = new DashBoardController();
+                    $this->baseController = new SettingController();
                     break;
             }
             switch(strtolower($_GET['action'])) {
                 case 'index':
                     $this->content = $this->baseController->indexAction();
                     break;
+                case 'login':
+                    $layout='loginlayout.tpl';
+                    $this->content = $this->baseController->login();
+                    break;
+                case 'logout':
+                    $this->content = $this->baseController->logout();
+                    break;
+                case 'changepassword':
+                    $this->content = $this->baseController->changePassword();
+                    break;
                 default:
                     $this->content =$this->baseController->indexAction();
                     break;
             }
         } else {
-            $_GET['controller'] = 'dashboard';
+            $_GET['controller'] = 'setting';
             $_GET['action'] = 'index';
-            $basecontroller = new DashBoardController();
+            $basecontroller = new SettingController();
             $this->content = $basecontroller->indexAction();
         }
 
-        return $this->content;
+        return array($this->content,$layout);
     }
 }

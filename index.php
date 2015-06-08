@@ -1,4 +1,5 @@
 <?php
+session_start();
 use Configs\Routing;
 
 define('APPLICATION',dirname(__FILE__));
@@ -23,12 +24,14 @@ $smarty->template_dir = APPLICATION_VIEW;
 $smarty->compile_dir = PATH_CACHE.'/templates_c';
 $smarty->cache_dir = PATH_CACHE;
 
-$content = $routing->getRouting();
+list($content,$layout) = $routing->getRouting();
 
 
 $smarty->assign('PATH_CSS',PATH_CSS);
 $smarty->assign('PATH_JS',PATH_JS);
 $smarty->assign('PATH_IMAGES',PATH_IMAGES);
-
+if(isset($_SESSION['username'])) {
+    $smarty->assign('user',$_SESSION['username']);
+}
 $smarty->assign('content',$content);
-$smarty->display('layout.tpl');
+$smarty->display($layout);

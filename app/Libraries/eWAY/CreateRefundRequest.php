@@ -8,7 +8,9 @@
 
 namespace Libraries\eWAY;
 
-
+use Libraries\eWAY\Refund;
+use Libraries\eWAY\RefundCustomer;
+use Libraries\eWAY\ShippingAddress;
 /**
  * Contains details to complete a Refund
  */

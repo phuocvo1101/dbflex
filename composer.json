@@ -7,13 +7,9 @@
             "Controllers\\": "app/Controllers"
         },
         "psr-0" : {
-            "Oara" : "app/Libraries",
-            "Google" : "vendor/google/apiclient/src/"
         }
     },
     "require": {
-        "smarty/smarty": "~3.1",
-        "zendframework/zendframework1": "1.*",
-        "guzzlehttp/guzzle": "~6.0"
+        "smarty/smarty": "~3.1"
     }
 }
