@@ -1,36 +1,58 @@
 <?php
 namespace Models;
 
+use Libraries\Database;
 use Libraries\DBFlex\API;
-use GuzzleHttp\Client;
+use Libraries\DBFlex\DataSet;
 use Libraries\eWAY\CreateDirectPaymentRequest;
 use Libraries\eWAY\LineItem;
 use Libraries\eWAY\RapidAPI;
 
 class InvoiceModel extends BaseModel
 {
-    private $ewayKey='C3AB9C6G6ljG838l6xaSIJTf3cE/AoqfLasktjKrX5TgPTHSMfNY/HRsR8jaxkT3v2M9G6';
-    private $ewayPassword='duyquang#112088';
+    private $ewayKey;
+    private $ewayPassword='';
     private $username = '';
     private $password = '';
-    private $envirSandbox = true;
-    public function __construct($params)
+    private $envirSandbox=true;
+    private $appId;
+    private $dbflexUrl = '';
+    public function __construct()
     {
         parent::__construct();
-        if(isset($params['username'])) {
-            $this->username = $params['username'];
+        $this->database = new Database();
+        $settingModel = new SettingModel();
+        $settings = $settingModel->getSettings();
+        if(isset($settings['dbflex_user'])) {
+            $this->username = $settings['dbflex_user'];
         }
-        if(isset($params['password'])) {
-            $this->password = $params['password'];
+        if(isset($settings['dbflex_url'])) {
+            $this->dbflexUrl = $settings['dbflex_url'];
         }
 
-        if(isset($params['ewayPassword'])) {
-            $this->ewayPassword = $params['ewayPassword'];
+        if(isset($settings['dbflex_pass'])) {
+            $this->password = $settings['dbflex_pass'];
+        }
+
+        if(isset($settings['eway_key'])) {
+            $this->ewayKey = $settings['eway_key'];
+        }
+
+        if(isset($settings['eway_pass'])) {
+            $this->ewayPassword = $settings['eway_pass'];
         }
 
 
-        if(isset($params['envirSandbox'])) {
-            $this->envirSandbox = $params['envirSandbox'];
+        if(isset($settings['eway_appid'])) {
+            $this->appId = $settings['eway_appid'];
+        }
+
+        if(isset($settings['eway_envir'])) {
+            if($settings['eway_envir']==1) {
+                $this->envirSandbox = true;
+            }else{
+                $this->envirSandbox = false;
+            }
         }
     }
 
@@ -38,8 +60,7 @@ class InvoiceModel extends BaseModel
     {
         try
         {
-
-            $api = new API("tcguy.dbflex.net", 41016, array("trace" => true));
+            $api = new API($this->dbflexUrl, $this->appId, array("trace" => true));
 
             $api->login( $this->username,$this->password);
 
@@ -50,6 +71,7 @@ class InvoiceModel extends BaseModel
             if(!isset($result->Rows)) {
                 return array();
             }
+
             return $result->Rows;
 
         }
@@ -62,29 +84,40 @@ class InvoiceModel extends BaseModel
         }
     }
 
-   /* public function listModel()
+    public function getTransaction($transactionID)
     {
-        $client = new Client([]);
-        $url = 'https://tcguy.dbflex.net/secure/api/v2/41016/transaction/select.json?Fetch=5';
-        $response = $client->get(
-            $url,
-            array(
-                'auth'=> array(
-                    $this->username,
-                    $this->password),
-                'query' => array(
-                    'Fetch' => 2
-                )
-            )
+        $eway_params = array();
+        if ($this->envirSandbox) {
+            $eway_params['sandbox'] = true;
+        }
+        $service = new RapidAPI($this->ewayKey, $this->ewayPassword, $eway_params);
+        $result = $service->TransactionQuery($transactionID);
+        if (isset($result->Errors) && !empty($result->Errors)) {
+            // Get Error Messages from Error Code.
+            $ErrorArray = explode(",", $result->Errors);
+            $lblError = "";
+            foreach ( $ErrorArray as $error ) {
+                $error = $service->getMessage($error);
+                $lblError .= $error . "<br />\n";;
+            }
+            echo 'Get Transaction is Failed: '.$transactionID."\n";
+            echo 'Message:'.$lblError."\n";
+            return array(
+                'status' => false,
+                'error_codes' => $ErrorArray,
+                'message' => $lblError
+            );
+        }
+
+        return array(
+            'status' => true,
+            'TransactionStatus' => $result->Transactions[0]->TransactionStatus
         );
-        $stream = $response->getBody(true);
-        $content = $stream->getContents();
-        $result = json_decode($content,true);
-       return $result;
-    }*/
+    }
 
     public function payment($invoice)
     {
+        echo 'Begin Payment'."\n";
         $request = new CreateDirectPaymentRequest();
 
         $request->Customer->Reference = isset($invoice['CustomerReference']) ? $invoice['CustomerReference'] : '' ;
@@ -159,9 +192,11 @@ class InvoiceModel extends BaseModel
         $request->TransactionType = isset($invoice['TransactionType']) ? $invoice['TransactionType'] : '' ;
 
         $eway_params = array();
+
         if ($this->envirSandbox) {
             $eway_params['sandbox'] = true;
         }
+
         $service = new RapidAPI($this->ewayKey, $this->ewayPassword, $eway_params);
         $result = $service->DirectPayment($request);
 
@@ -182,6 +217,8 @@ class InvoiceModel extends BaseModel
             );
         }
 
+        echo "Finish Payment\n";
+
         if (isset($result->TransactionStatus) && $result->TransactionStatus && (is_bool($result->TransactionStatus) || $result->TransactionStatus != "false")) {
             return array(
                 'status' => true,
@@ -197,24 +234,101 @@ class InvoiceModel extends BaseModel
 
     }
 
+    public function insertTransaction($transaction)
+    {
+
+        $sql = 'INSERT INTO transactions(dbflex_id) VALUES(?)';
+        $this->database->setQuery($sql);
+        $data = array(
+            array($transaction['dbflex_id'],\PDO::PARAM_INT)
+        );
+        return $this->database->execute($data);
+    }
+
+    public function checkDBflexID($dbflex_id)
+    {
+        $sql = 'SELECT COUNT(*) as Total FROM transactions WHERE dbflex_id =?';
+        $this->database->setQuery($sql);
+        $data = array(
+            array($dbflex_id,\PDO::PARAM_INT)
+        );
+        $row = $this->database->loadRow($data);
+        if(isset($row->Total) && $row->Total > 0) {
+            return true;
+        }
+        return false;
+    }
+
+    public function checkTransactionID($dbflex_id)
+    {
+        $sql = 'SELECT transaction_id FROM transactions WHERE dbflex_id =?';
+        $this->database->setQuery($sql);
+        $data = array(
+            array($dbflex_id,\PDO::PARAM_INT)
+        );
+        $row = $this->database->loadRow($data);
+        if(isset($row->transaction_id) && !empty($row->transaction_id)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public  function updateTransaction($transaction)
+    {
+        $sql = 'UPDATE transactions SET transaction_id=? WHERE dbflex_id=?';
+        $this->database->setQuery($sql);
+        $data = array(
+            array($transaction['transaction_id'],\PDO::PARAM_INT),
+            array($transaction['dbflex_id'],\PDO::PARAM_INT)
+        );
+        return $this->database->execute($data);
+    }
+
     public function payments($invoices)
     {
 
         foreach($invoices as $invoice) {
+            // enable fetch=1
+        /*    $this->update(array(
+               'Id' => $invoice['Id'],
+                'Fetch' => true
+            ));*/
+
+            if(!$this->checkDBflexID($invoice['Id'])) {
+                // insert database
+                $insertDB = $this->insertTransaction(array('dbflex_id'=>$invoice['Id']));
+            }
+
+            if($this->checkTransactionID($invoice['Id'])) {
+                continue;
+            }
+
             $result = $this->payment($invoice);
-            $params = array(
+
+           /* $params = array(
                 'Id' => $invoice['Id'],
                 'Fetch' => true,
                 'Status' => true
-            );
+            );*/
 
             if($result['status'] == false) {
-                $params['Status'] = false;
-                $this->update($params);
+               // $params['Status'] = false;
+               // $this->update($params);
                 continue;
             }
-            $params['TransactionID'] = $result['data']['TransactionID'];
-            $this->update($params);
+
+            $resultUpdate = $this->updateTransaction(array(
+                'transaction_id' => $result['data']['TransactionID'],
+                'dbflex_id' => $invoice['Id']
+            ));
+
+            if(!$resultUpdate) {
+                continue;
+            }
+
+           // $params['TransactionID'] = $result['data']['TransactionID'];
+            //$this->update($params);
         }
 
         return true;
@@ -226,73 +340,122 @@ class InvoiceModel extends BaseModel
             return false;
         }
 
-        $url = 'https://tcguy.dbflex.net/secure/api/v2/41016/transaction/upsert.json';
-        $client = new Client([
-            'base_uri' => $url,
-                'auth' => [
-                    $this->username,
-                    $this->password
-                ]
+        $api = new API($this->dbflexUrl, $this->appId, array("trace" => true));
 
-        ]);
+        $api->login($this->username,$this->password);
 
-        $request = $client->post(
-            $url,
-            [
-                'form_params' => $params
-            ]
+        $arrKeys = array();
+        foreach($params as $key=>$item) {
+            if($key!="Id") {
+                $arrKeys[] = $key;
+            }
+        }
 
-        );
-        $stream = $request->getBody(true);
-        $content = $stream->getContents();
-        $result = json_decode($content,true);
-        return $result;
+        $ds = $api->Retrieve("Transaction", $arrKeys, array($params['Id']));
+        foreach($params as $key=>$item) {
+            if($key!="Id") {
+                $ds->Rows[0][$key] = $item;
+            }
+        }
+
+        $api->Update('Transaction',$ds);
+
+        $api->Logout();
+
+
+        return true;
 
     }
 
-   /* public function insert($invoices)
+    public function getListTransactionsUpdate()
     {
-        foreach($invoices as $item) {
-            $query = 'INSERT INTO invoices(transactionRemoteID,amount,currencyCode,invoiceNumber,invoiceReference,
-                      invoiceDescription,title,customerReference,firtName,lastName,companyName,jobDescription,street,
-                      city,state,postCode,country,email,phone,mobile,fax,website,comment,cardHolder,cardNumber,
-                      expiryDate,validFormDate,issueNumber,cvn,transactionType,date)
-                       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
-            $arrData = array(
-                array($item['merchantId'],\PDO::PARAM_INT),
-                array($item['date'],\PDO::PARAM_STR),
-                array($item['unique_id_ordernumber'],\PDO::PARAM_STR),
-                array($item['programma_name'],\PDO::PARAM_STR),
-                array($item['programa_prepayment_status'],\PDO::PARAM_STR),
-                array($item['time_of_visit'],\PDO::PARAM_STR),
-                array($item['time_in_session'],\PDO::PARAM_STR),
-                array($item['time_last_modified'],\PDO::PARAM_STR),
-                array($item['evento_name'],\PDO::PARAM_STR),
-                array($item['reason'],\PDO::PARAM_STR),
-                array($item['site_name'],\PDO::PARAM_STR),
-                array($item['elem_grafico_name'],\PDO::PARAM_STR),
-                array($item['status'],\PDO::PARAM_STR),
-                array($item['amount'],\PDO::PARAM_STR),
-                array($item['commission'],\PDO::PARAM_STR),
-                array($item['custom_id'],\PDO::PARAM_STR),
-                array($item['date'],\PDO::PARAM_STR),
-                array($item['unique_id_ordernumber'],\PDO::PARAM_STR),
-                array($item['programma_name'],\PDO::PARAM_STR),
-                array($item['programa_prepayment_status'],\PDO::PARAM_STR),
-                array($item['time_of_visit'],\PDO::PARAM_STR),
-                array($item['time_in_session'],\PDO::PARAM_STR),
-                array($item['time_last_modified'],\PDO::PARAM_STR),
-                array($item['evento_name'],\PDO::PARAM_STR),
-                array($item['reason'],\PDO::PARAM_STR),
-                array($item['site_name'],\PDO::PARAM_STR),
-                array($item['elem_grafico_name'],\PDO::PARAM_STR),
-                array($item['status'],\PDO::PARAM_STR),
-                array($item['amount'],\PDO::PARAM_STR),
-                array($item['commission'],\PDO::PARAM_STR),
-                array($item['custom_id'],\PDO::PARAM_STR)
-            );
-            $this->database->setQuery($query);
-            $this->database->execute($arrData);
+        $sql = 'SELECT * FROM transactions WHERE transaction_id<>"" AND status<>1';
+        $this->database->setQuery($sql);
+        return $this->database->loadAllRows();
+    }
+
+    public function updateStatusTransaction($id)
+    {
+        $sql = ' UPDATE transactions SET status=? WHERE id=?';
+        $this->database->setQuery($sql);
+        $data = array(
+            array(1,\PDO::PARAM_INT),
+            array($id,\PDO::PARAM_INT)
+        );
+        return $this->database->execute($data);
+    }
+
+    public function updateLastTime()
+    {
+        $time = time();
+        $sql = 'UPDATE settings SET `value`=? WHERE `key`=?';
+        $this->database->setQuery($sql);
+        $data = array(
+            array($time,\PDO::PARAM_STR),
+            array('lastmodified',\PDO::PARAM_STR)
+        );
+
+        return $this->database->execute($data);
+    }
+
+    public function updateTransactions()
+    {
+        $transactions = $this->getListTransactionsUpdate();
+        foreach($transactions as $item) {
+            $resultTransactions = $this->getTransaction($item->transaction_id);
+            if($resultTransactions['status'] == false){
+                $this->updateStatusTransaction($item->id);
+                continue;
+            }
+
+            $result = $this->update(array(
+                'Id' => $item->dbflex_id,
+                'Fetch' => true,
+                'Status' => $resultTransactions['TransactionStatus']
+            ));
+
+            if($result) {
+                $this->updateStatusTransaction($item->id);
+                continue;
+            }
+
         }
-    }*/
+
+        return true;
+    }
+
+    public function checkScheduleTime()
+    {
+
+        $sql = 'SELECT `value` FROM `settings` WHERE `key`=?';
+        $this->database->setQuery($sql);
+        $data = array(
+            array('lastmodified',\PDO::PARAM_STR)
+        );
+       $result = $this->database->loadRow($data);
+
+        if($result== false ) {
+            return false;
+        }
+        $lastmodified = $result->value;
+        echo 'LastModified:'.date('Y-m-d H:i:s', $lastmodified)."\n";
+        $sql = 'SELECT `value` FROM `settings` WHERE `key`=?';
+        $this->database->setQuery($sql);
+        $data = array(
+            array('cronjob_interval',\PDO::PARAM_STR)
+        );
+        $result = $this->database->loadRow($data);
+        if($result== false ) {
+            return false;
+        }
+        $timeInterval = $result->value;
+        $time=time();
+        echo 'Current Time:'.date('Y-m-d H:i:s', $time)."\n";
+        $timesum = $lastmodified + ($timeInterval*60);
+        if($timesum<$time) {
+            return true;
+        }
+        return false;
+    }
+
 }
