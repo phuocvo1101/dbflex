@@ -7,6 +7,7 @@ use Libraries\DBFlex\DataSet;
 use Libraries\eWAY\CreateDirectPaymentRequest;
 use Libraries\eWAY\LineItem;
 use Libraries\eWAY\RapidAPI;
+use Models\MappingModel;
 
 class InvoiceModel extends BaseModel
 {
@@ -17,11 +18,14 @@ class InvoiceModel extends BaseModel
     private $envirSandbox=true;
     private $appId;
     private $dbflexUrl = '';
+    private $model;
+
     public function __construct()
     {
         parent::__construct();
         $this->database = new Database();
         $settingModel = new SettingModel();
+        $this->model= new MappingModel();
         $settings = $settingModel->getSettings();
         if(isset($settings['dbflex_user'])) {
             $this->username = $settings['dbflex_user'];
@@ -119,27 +123,39 @@ class InvoiceModel extends BaseModel
     {
         echo 'Begin Payment'."\n";
         $request = new CreateDirectPaymentRequest();
+        $mappings= $this->model->getMaps();
+        $mappingResult = array();
+        foreach($mappings as $item) {
+            $mappingResult[$item->keymap] = $item->valuemap;
+        }
+        // cho nay lay duoc cai key Customer.Reference trong bang mapping ra
 
-        $request->Customer->Reference = isset($invoice['CustomerReference']) ? $invoice['CustomerReference'] : '' ;
-        $request->Customer->Title = isset($invoice['Title']) ? $invoice['Title'] : '' ;
-        $request->Customer->FirstName = isset($invoice['FirstName']) ? $invoice['FirstName'] : '' ;
-        $request->Customer->LastName = isset($invoice['LastName']) ? $invoice['LastName'] : '' ;
-        $request->Customer->CompanyName = isset($invoice['CompanyName']) ? $invoice['CompanyName'] : '' ;
-        $request->Customer->JobDescription = isset($invoice['JobDescription']) ? $invoice['JobDescription'] : '' ;
-        $request->Customer->Street1 = isset($invoice['Street']) ? $invoice['Street'] : '' ;
-        $request->Customer->City = isset($invoice['City']) ? $invoice['City'] : '' ;
-        $request->Customer->State = isset($invoice['State']) ? $invoice['State'] : '' ;
-        $request->Customer->PostalCode =  isset($invoice['PostCode']) ? $invoice['PostCode'] : '' ;
-        $request->Customer->Country = isset($invoice['Country']) ? $invoice['Country'] : '' ;
-        $request->Customer->Email = isset($invoice['Email']) ? $invoice['Email'] : '' ;
-        $request->Customer->Phone = isset($invoice['Phone']) ? $invoice['Phone'] : '' ;
-        $request->Customer->Mobile = isset($invoice['Mobile']) ? $invoice['Mobile'] : '' ;
-        $request->Customer->Comments = isset($invoice['Comments']) ? $invoice['Comments'] : '' ;
-        $request->Customer->Fax = isset($invoice['Fax']) ? $invoice['Fax'] : '' ;
-        $request->Customer->Url = isset($invoice['Website']) ? $invoice['Website'] : '' ;
+        $request->Customer->Reference = isset($invoice[$mappingResult['Customer.Reference']]) ? $invoice[$mappingResult['Customer.Reference']] : '' ;
+        //$request->Customer->Reference = isset($invoice['CustomerReference']) ? $invoice['CustomerReference'] : '' ;
+        $request->Customer->Title = isset($invoice[$mappingResult['Customer.Title']]) ? $invoice[$mappingResult['Customer.Title']] : '' ;
+        $request->Customer->FirstName = isset($invoice[$mappingResult['Customer.FirstName']]) ? $invoice[$mappingResult['Customer.FirstName']] : '' ;
+        $request->Customer->LastName = isset($invoice[$mappingResult['Customer.LastName']]) ? $invoice[$mappingResult['Customer.LastName']] : '' ;
+        $request->Customer->CompanyName = isset($invoice[$mappingResult['Customer.CompanyName']]) ? $invoice[$mappingResult['Customer.CompanyName']] : '' ;
+        $request->Customer->JobDescription = isset($invoice[$mappingResult['Customer.JobDescription']]) ? $invoice[$mappingResult['Customer.JobDescription']] : '' ;
+        $request->Customer->Street1 = isset($invoice[$mappingResult['Customer.Street1']]) ? $invoice[$mappingResult['Customer.Street1']] : '' ;
+        $request->Customer->City = isset($invoice[$mappingResult['Customer.City']]) ? $invoice[$mappingResult['Customer.City']] : '' ;
+        $request->Customer->State = isset($invoice[$mappingResult['Customer.Title']]) ? $invoice[$mappingResult['Customer.Title']] : '' ;
+        $request->Customer->PostalCode =  isset($invoice[$mappingResult['Customer.PostalCode']]) ? $invoice[$mappingResult['Customer.PostalCode']] : '' ;
+        $request->Customer->Country = isset($invoice[$mappingResult['Customer.Country']]) ? $invoice[$mappingResult['Customer.Country']] : '' ;
+        $request->Customer->Email = isset($invoice[$mappingResult['Customer.Email']]) ? $invoice[$mappingResult['Customer.Email']] : '' ;
+        $request->Customer->Phone = isset($invoice[$mappingResult['Customer.Phone']]) ? $invoice[$mappingResult['Customer.Phone']] : '' ;
+        $request->Customer->Mobile = isset($invoice[$mappingResult['Customer.Mobile']]) ? $invoice[$mappingResult['Customer.Mobile']] : '' ;
+        $request->Customer->Comments = isset($invoice[$mappingResult['Customer.Comments']]) ? $invoice[$mappingResult['Customer.Comments']] : '' ;
+        $request->Customer->Fax = isset($invoice[$mappingResult['Customer.Fax']]) ? $invoice[$mappingResult['Customer.Fax']] : '' ;
+        $request->Customer->Url = isset($invoice[$mappingResult['Customer.Url']]) ? $invoice[$mappingResult['Customer.Url']] : '' ;
+        $request->Customer->CardDetails->Name = isset($invoice[$mappingResult['Customer.CardDetails.Name']]) ? $invoice[$mappingResult['Customer.CardDetails.Name']] : '' ;
+        $request->Customer->CardDetails->Number = isset($invoice[$mappingResult['Customer.CardDetails.Number']]) ? $invoice[$mappingResult['Customer.CardDetails.Number']] : '' ;
 
-        $request->Customer->CardDetails->Name = isset($invoice['CardHolder']) ? $invoice['CardHolder'] : '' ;
-        $request->Customer->CardDetails->Number = isset($invoice['CardNumber']) ? $invoice['CardNumber'] : '' ;
+       // $request->Customer->Date =  isset($invoice[$mappingResult['Customer.Date']]) ? $invoice[$mappingResult['Customer.Date']] : '' ;
+       // $request->Customer->TransactionID = isset($invoice[$mappingResult['Customer.TransactionID']]) ? $invoice[$mappingResult['Customer.TransactionID']] : '' ;
+      //  $request->Customer->TransactionType = isset($invoice[$mappingResult['Customer.TransactionType']]) ? $invoice[$mappingResult['Customer.TransactionType']] : '' ;
+
+
 
         if(isset($invoice['ExpiryDate']) && $invoice['ExpiryDate'] instanceof \DateTime) {
             $month = $invoice['ExpiryDate']->format("m");
@@ -155,21 +171,21 @@ class InvoiceModel extends BaseModel
             $request->Customer->CardDetails->StartYear = $year;
         }
 
-        $request->Customer->CardDetails->IssueNumber = isset($invoice['IssueNumber']) ? $invoice['IssueNumber'] : '' ;
-        $request->Customer->CardDetails->CVN = isset($invoice['CVN']) ? $invoice['CVN'] : '' ;
+        $request->Customer->CardDetails->IssueNumber = isset($invoice[$mappingResult['Customer.CardDetails.IssueNumber']]) ? $invoice[$mappingResult['Customer.CardDetails.IssueNumber']] : '' ;
+        $request->Customer->CardDetails->CVN = isset($invoice[$mappingResult['Customer.CardDetails.CVN']]) ? $invoice[$mappingResult['Customer.CardDetails.CVN']] : '' ;
 
         // Populate values for ShippingAddress Object.
         // This values can be taken from a Form POST as well. Now is just some dummy data.
-        $request->ShippingAddress->FirstName = isset($invoice['FirstName']) ? $invoice['FirstName'] : '' ;
-        $request->ShippingAddress->LastName = isset($invoice['LastName']) ? $invoice['LastName'] : '' ;
-        $request->ShippingAddress->Street1 = isset($invoice['Street']) ? $invoice['Street'] : '' ;
+        $request->ShippingAddress->FirstName = isset($invoice[$mappingResult['ShippingAddress.FirstName']]) ? $invoice[$mappingResult['ShippingAddress.FirstName']] : '' ;
+        $request->ShippingAddress->LastName = isset($invoice[$mappingResult['ShippingAddress.LastName']]) ? $invoice[$mappingResult['ShippingAddress.LastName']] : '' ;
+        $request->ShippingAddress->Street1 = isset($invoice[$mappingResult['ShippingAddress.Street1']]) ? $invoice[$mappingResult['ShippingAddress.Street1']] : '' ;
         $request->ShippingAddress->Street2 = "";
-        $request->ShippingAddress->City =  isset($invoice['City']) ? $invoice['City'] : '' ;
-        $request->ShippingAddress->State = isset($invoice['State']) ? $invoice['State'] : '' ;
-        $request->ShippingAddress->Country = isset($invoice['Country']) ? $invoice['Country'] : '' ;
-        $request->ShippingAddress->PostalCode = isset($invoice['PostCode']) ? $invoice['PostCode'] : '' ;
-        $request->ShippingAddress->Email = isset($invoice['Email']) ? $invoice['Email'] : '' ;
-        $request->ShippingAddress->Phone = isset($invoice['Phone']) ? $invoice['Phone'] : '' ;
+        $request->ShippingAddress->City =  isset($invoice[$mappingResult['ShippingAddress.City']]) ? $invoice[$mappingResult['ShippingAddress.City']] : '' ;
+        $request->ShippingAddress->State = isset($invoice[$mappingResult['ShippingAddress.State']]) ? $invoice[$mappingResult['ShippingAddress.State']] : '' ;
+        $request->ShippingAddress->Country = isset($invoice[$mappingResult['ShippingAddress.Country']]) ? $invoice[$mappingResult['ShippingAddress.Country']] : '' ;
+        $request->ShippingAddress->PostalCode = isset($invoice[$mappingResult['ShippingAddress.PostalCode']]) ? $invoice[$mappingResult['ShippingAddress.PostalCode']] : '' ;
+        $request->ShippingAddress->Email = isset($invoice[$mappingResult['ShippingAddress.Email']]) ? $invoice[$mappingResult['ShippingAddress.Email']] : '' ;
+        $request->ShippingAddress->Phone = isset($invoice[$mappingResult['ShippingAddress.Phone']]) ? $invoice[$mappingResult['ShippingAddress.Phone']] : '' ;
 
         $request->ShippingAddress->ShippingMethod = "LowCost";
         $item1 = new LineItem();
@@ -182,14 +198,18 @@ class InvoiceModel extends BaseModel
         $request->Items->LineItem[1] = $item2;
 
         // Populate values for Payment Object
-        $request->Payment->TotalAmount = isset($invoice['Amount']) ? $invoice['Amount'] : '' ;
-        $request->Payment->InvoiceNumber =isset($invoice['InvoiceNumber']) ? $invoice['InvoiceNumber'] : '' ;
-        $request->Payment->InvoiceDescription = isset($invoice['InvoiceDescription']) ? $invoice['InvoiceDescription'] : '' ;
-        $request->Payment->InvoiceReference = isset($invoice['InvoiceReference']) ? $invoice['InvoiceReference'] : '' ;
-        $request->Payment->CurrencyCode = isset($invoice['CurrencyCode']) ? $invoice['CurrencyCode'] : '' ;
+
+
+        /////
+        $request->Payment->InvoiceDescription = isset($invoice[$mappingResult['Payment.InvoiceDescription']]) ? $invoice[$mappingResult['Payment.InvoiceDescription']] : '' ;
+        $request->Payment->TotalAmount = isset($invoice[$mappingResult['Payment.TotalAmount']]) ? $invoice[$mappingResult['Payment.TotalAmount']] : '' ;
+        $request->Payment->InvoiceNumber = isset($invoice[$mappingResult['Payment.InvoiceNumber']]) ? $invoice[$mappingResult['Payment.InvoiceNumber']] : '' ;
+        $request->Payment->InvoiceReference = isset($invoice[$mappingResult['Payment.InvoiceReference']]) ? $invoice[$mappingResult['Payment.InvoiceReference']] : '' ;
+        $request->Payment->CurrencyCode =  isset($invoice[$mappingResult['Payment.CurrencyCode']]) ? $invoice[$mappingResult['Payment.CurrencyCode']] : '' ;
+
 
         $request->Method = 'ProcessPayment';
-        $request->TransactionType = isset($invoice['TransactionType']) ? $invoice['TransactionType'] : '' ;
+        $request->TransactionType = 'Purchase' ;
 
         $eway_params = array();
 
@@ -411,7 +431,8 @@ class InvoiceModel extends BaseModel
             $result = $this->update(array(
                 'Id' => $item->dbflex_id,
                 'Fetch' => true,
-                'Status' => $resultTransactions['TransactionStatus']
+                'Status' => $resultTransactions['TransactionStatus'],
+                'TransactionID' => $item->transaction_id
             ));
 
             if($result) {

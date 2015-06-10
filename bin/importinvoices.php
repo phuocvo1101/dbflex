@@ -17,6 +17,7 @@ $invoice->updateLastTime();
 echo "Begin Import Invoices\n";
 
 $invoices = $invoice->listModel();
+
 echo "Total Records:". count($invoices)."\n";
 $return = $invoice->payments($invoices);
 
