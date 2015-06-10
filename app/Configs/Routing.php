@@ -38,6 +38,15 @@ class Routing {
                 case 'index':
                     $this->content = $this->baseController->indexAction();
                     break;
+                case 'create':
+                    $this->content = $this->baseController->createAction();
+                    break;
+                case 'update':
+                    $this->content = $this->baseController->updateAction();
+                    break;
+                case 'delete':
+                    $this->content = $this->baseController->deleteAction();
+                    break;
                 case 'login':
                     $layout='loginlayout.tpl';
                     $this->content = $this->baseController->login();

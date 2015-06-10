@@ -23,6 +23,54 @@ class MappingController extends  BaseController implements IBaseController
     }
     public function indexAction()
     {
+        $mappings= $this->model->getMaps();
+       // echo "<pre>".print_r($mappings,true)."</pre>";die();
+        $this->template->assign('maps',$mappings);
         return $this->template->fetch('mapping/index.tpl');
+    }
+    public function createAction()
+    {
+        if(isset($_POST['create'])){
+
+            $key= isset($_POST['key'])?$_POST['key']:'';
+            $value= isset($_POST['value'])?$_POST['value']:'';
+            $data= array(
+                'key'=>$key,
+                'value'=>$value,
+            );
+            $this->model->createMap($data);
+            return $this->indexAction();
+        }
+        return $this->template->fetch('mapping/create.tpl');
+
+
+    }
+    public function updateAction()
+    {
+        $id= $_GET['id'];
+        if(isset($_POST['update'])){
+            $key= isset($_POST['key'])?$_POST['key']:'';
+            $value= isset($_POST['value'])?$_POST['value']:'';
+            $data= array(
+                'key'=>$key,
+                'value'=>$value,
+            );
+            $this->model->updateMap($data,$id);
+            return $this->indexAction();
+        }
+
+        $map= $this->model->getMap($id);
+       // echo '<pre>'.print_r($map,true).'</pre>';die();
+        $this->template->assign('map',$map);
+        return $this->template->fetch('mapping/update.tpl');
+        // echo 'update test';
+    }
+    public function deleteAction()
+    {
+        $id= $_GET['id'];
+        $this->model->deleteMap($id);
+        return $this->indexAction();
+
+
     }
 } 
