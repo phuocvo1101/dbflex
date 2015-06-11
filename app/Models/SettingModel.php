@@ -32,6 +32,7 @@ class SettingModel extends  BaseModel
         return $result;
     }
 
+
     public function updateSetting($settings)
     {
         foreach($settings as $key=>$value) {
@@ -44,6 +45,36 @@ class SettingModel extends  BaseModel
             );
             $result = $this->database->execute($data);
         }
+        return true;
+    }
+    public function getSetting()
+    {
+        $key= "transaction_table";
+        $sql = 'SELECT * FROM settings where `key`=?';
+        $this->database->setQuery($sql);
+        $arr= array(
+            array($key,\PDO::PARAM_STR )
+        );
+        $settings = $this->database->loadRow($arr);
+        // var_dump($settings);die();
+        return $settings;
+    }
+    public function updateTransaction($value)
+    {
+        $key= 'transaction_table';
+
+        $sql = 'UPDATE `settings` SET `value`=? WHERE `key`= ? ';
+
+        $this->database->setQuery($sql);
+        $data = array(
+            array($value,\PDO::PARAM_STR),
+            array($key,\PDO::PARAM_STR)
+        );
+        $result = $this->database->execute($data);
+        if(!$result){
+            return false;
+        }
+
         return true;
     }
 } 

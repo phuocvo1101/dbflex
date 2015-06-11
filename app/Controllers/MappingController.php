@@ -23,9 +23,11 @@ class MappingController extends  BaseController implements IBaseController
     }
     public function indexAction()
     {
+        $setting= $this->model->getSetting();
         $mappings= $this->model->getMaps();
        // echo "<pre>".print_r($mappings,true)."</pre>";die();
         $this->template->assign('maps',$mappings);
+        $this->template->assign('setting',$setting);
         return $this->template->fetch('mapping/index.tpl');
     }
     public function createAction()
