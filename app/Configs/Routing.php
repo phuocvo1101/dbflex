@@ -2,6 +2,7 @@
 namespace Configs;
 
 
+use Controllers\MappingController;
 use Controllers\SettingController;
 use Controllers\UserController;
 
@@ -19,12 +20,15 @@ class Routing {
         $layout='layout.tpl';
         if(isset($_GET["controller"]) && isset($_GET['action'])) {
 
-            switch($_GET["controller"]) {
+            switch(strtolower($_GET["controller"])) {
                 case "setting":
                     $this->baseController = new SettingController();
                     break;
                 case "user":
                     $this->baseController = new UserController();
+                    break;
+                case "mapping":
+                    $this->baseController = new MappingController();
                     break;
                 default:
                     $this->baseController = new SettingController();
@@ -33,6 +37,15 @@ class Routing {
             switch(strtolower($_GET['action'])) {
                 case 'index':
                     $this->content = $this->baseController->indexAction();
+                    break;
+                case 'create':
+                    $this->content = $this->baseController->createAction();
+                    break;
+                case 'update':
+                    $this->content = $this->baseController->updateAction();
+                    break;
+                case 'delete':
+                    $this->content = $this->baseController->deleteAction();
                     break;
                 case 'login':
                     $layout='loginlayout.tpl';

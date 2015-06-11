@@ -45,7 +45,7 @@
     <!--search & user info start-->
     <ul class="nav pull-right top-menu">
 
-        <li class="dropdown open">
+        <li class="dropdown ">
             <a data-toggle="dropdown" class="dropdown-toggle" href="#">
                 <img alt="" src="public/img/avatar-mini.jpg">
                 <span class="username">{if !empty($user)}{$user}{/if}</span>
@@ -77,6 +77,12 @@
                 <a class="active" href="index.php?controller=setting&action=index">
                     <i class="fa fa-tasks"></i>
                     <span>Settings</span>
+                </a>
+            </li>
+            <li>
+                <a  href="index.php?controller=mapping&action=index">
+                    <i class="fa fa-tasks"></i>
+                    <span>Mappings</span>
                 </a>
             </li>
             

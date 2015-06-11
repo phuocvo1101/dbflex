@@ -84,4 +84,18 @@ class SettingController extends BaseController implements IBaseController{
         $this->template->assign('settings', $settings);
         return $this->template->fetch('setting/index.tpl');
     }
+    public function updateAction()
+    {
+
+        if(isset($_POST['update'])){
+            $value=$_POST['transaction'];
+          // echo $value;die();
+            $this->model->updateTransaction($value);
+            header('location:index.php?controller=mapping&action=index');
+        }
+        $setting= $this->model->getSetting();
+        $this->template->assign('setting',$setting);
+       return  $this->template->fetch('setting/update.tpl');
+
+    }
 } 
