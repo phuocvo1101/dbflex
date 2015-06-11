@@ -65,6 +65,7 @@ class InvoiceModel extends BaseModel
 
         try
         {
+
             $mappings= $this->model->getMaps();
             $mappingResult = array();
             foreach($mappings as $item) {
@@ -73,11 +74,15 @@ class InvoiceModel extends BaseModel
             $fetch= $mappingResult['Fetch'];
             $where ="[".$fetch."]". " ="." true";
 
+            $setting= $this->model->getSetting();
+            $table= $setting->value;
+
             $api = new API($this->dbflexUrl, $this->appId, array("trace" => true));
 
             $api->login( $this->username,$this->password);
 
-            $sql = "SELECT  * FROM [ABItech Invoice] WHERE ".$where;
+            $sql = "SELECT  * FROM [".$table."] WHERE ".$where;
+
             $result = $api->Query($sql);
 
             $api->Logout();
@@ -344,6 +349,9 @@ class InvoiceModel extends BaseModel
             return false;
         }
 
+        $setting= $this->model->getSetting();
+        $table= $setting->value;
+
         $api = new API($this->dbflexUrl, $this->appId, array("trace" => true));
 
         $api->login($this->username,$this->password);
@@ -356,7 +364,7 @@ class InvoiceModel extends BaseModel
             }
         }
 
-        $ds = $api->Retrieve("ABItech Invoice", $arrKeys, array($params['Id']));
+        $ds = $api->Retrieve($table, $arrKeys, array($params['Id']));
 
        foreach($params as $key=>$item) {
             if($key!="Id") {
@@ -364,7 +372,7 @@ class InvoiceModel extends BaseModel
             }
         }
 
-        $api->Update('ABItech Invoice',$ds);
+        $api->Update($table,$ds);
 
         $api->Logout();
 
