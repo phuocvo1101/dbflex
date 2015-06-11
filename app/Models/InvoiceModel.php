@@ -62,13 +62,22 @@ class InvoiceModel extends BaseModel
 
     public function listModel()
     {
+
         try
         {
+            $mappings= $this->model->getMaps();
+            $mappingResult = array();
+            foreach($mappings as $item) {
+                $mappingResult[$item->keymap] = $item->valuemap;
+            }
+            $fetch= $mappingResult['Fetch'];
+            $where ="[".$fetch."]". " ="." true";
+
             $api = new API($this->dbflexUrl, $this->appId, array("trace" => true));
 
             $api->login( $this->username,$this->password);
 
-            $sql = "SELECT  * FROM [Transaction] WHERE [FETCH] <> 1";
+            $sql = "SELECT  * FROM [ABItech Invoice] WHERE ".$where;
             $result = $api->Query($sql);
 
             $api->Logout();
@@ -128,10 +137,8 @@ class InvoiceModel extends BaseModel
         foreach($mappings as $item) {
             $mappingResult[$item->keymap] = $item->valuemap;
         }
-        // cho nay lay duoc cai key Customer.Reference trong bang mapping ra
 
         $request->Customer->Reference = isset($invoice[$mappingResult['Customer.Reference']]) ? $invoice[$mappingResult['Customer.Reference']] : '' ;
-        //$request->Customer->Reference = isset($invoice['CustomerReference']) ? $invoice['CustomerReference'] : '' ;
         $request->Customer->Title = isset($invoice[$mappingResult['Customer.Title']]) ? $invoice[$mappingResult['Customer.Title']] : '' ;
         $request->Customer->FirstName = isset($invoice[$mappingResult['Customer.FirstName']]) ? $invoice[$mappingResult['Customer.FirstName']] : '' ;
         $request->Customer->LastName = isset($invoice[$mappingResult['Customer.LastName']]) ? $invoice[$mappingResult['Customer.LastName']] : '' ;
@@ -147,15 +154,9 @@ class InvoiceModel extends BaseModel
         $request->Customer->Mobile = isset($invoice[$mappingResult['Customer.Mobile']]) ? $invoice[$mappingResult['Customer.Mobile']] : '' ;
         $request->Customer->Comments = isset($invoice[$mappingResult['Customer.Comments']]) ? $invoice[$mappingResult['Customer.Comments']] : '' ;
         $request->Customer->Fax = isset($invoice[$mappingResult['Customer.Fax']]) ? $invoice[$mappingResult['Customer.Fax']] : '' ;
-        $request->Customer->Url = isset($invoice[$mappingResult['Customer.Url']]) ? $invoice[$mappingResult['Customer.Url']] : '' ;
+       // $request->Customer->Url = isset($invoice[$mappingResult['Customer.Url']]) ? $invoice[$mappingResult['Customer.Url']] : '' ;
         $request->Customer->CardDetails->Name = isset($invoice[$mappingResult['Customer.CardDetails.Name']]) ? $invoice[$mappingResult['Customer.CardDetails.Name']] : '' ;
         $request->Customer->CardDetails->Number = isset($invoice[$mappingResult['Customer.CardDetails.Number']]) ? $invoice[$mappingResult['Customer.CardDetails.Number']] : '' ;
-
-       // $request->Customer->Date =  isset($invoice[$mappingResult['Customer.Date']]) ? $invoice[$mappingResult['Customer.Date']] : '' ;
-       // $request->Customer->TransactionID = isset($invoice[$mappingResult['Customer.TransactionID']]) ? $invoice[$mappingResult['Customer.TransactionID']] : '' ;
-      //  $request->Customer->TransactionType = isset($invoice[$mappingResult['Customer.TransactionType']]) ? $invoice[$mappingResult['Customer.TransactionType']] : '' ;
-
-
 
         if(isset($invoice['ExpiryDate']) && $invoice['ExpiryDate'] instanceof \DateTime) {
             $month = $invoice['ExpiryDate']->format("m");
@@ -199,8 +200,6 @@ class InvoiceModel extends BaseModel
 
         // Populate values for Payment Object
 
-
-        /////
         $request->Payment->InvoiceDescription = isset($invoice[$mappingResult['Payment.InvoiceDescription']]) ? $invoice[$mappingResult['Payment.InvoiceDescription']] : '' ;
         $request->Payment->TotalAmount = isset($invoice[$mappingResult['Payment.TotalAmount']]) ? $invoice[$mappingResult['Payment.TotalAmount']] : '' ;
         $request->Payment->InvoiceNumber = isset($invoice[$mappingResult['Payment.InvoiceNumber']]) ? $invoice[$mappingResult['Payment.InvoiceNumber']] : '' ;
@@ -219,7 +218,7 @@ class InvoiceModel extends BaseModel
 
         $service = new RapidAPI($this->ewayKey, $this->ewayPassword, $eway_params);
         $result = $service->DirectPayment($request);
-
+       //var_dump($result);die();
         if (isset($result->Errors)) {
             // Get Error Messages from Error Code.
             $ErrorArray = explode(",", $result->Errors);
@@ -309,46 +308,31 @@ class InvoiceModel extends BaseModel
     {
 
         foreach($invoices as $invoice) {
-            // enable fetch=1
-        /*    $this->update(array(
-               'Id' => $invoice['Id'],
-                'Fetch' => true
-            ));*/
 
-            if(!$this->checkDBflexID($invoice['Id'])) {
+            if(!$this->checkDBflexID($invoice['@id'])) {
                 // insert database
-                $insertDB = $this->insertTransaction(array('dbflex_id'=>$invoice['Id']));
+                $insertDB = $this->insertTransaction(array('dbflex_id'=>$invoice['@id']));
             }
 
-            if($this->checkTransactionID($invoice['Id'])) {
+            if($this->checkTransactionID($invoice['@id'])) {
                 continue;
             }
 
             $result = $this->payment($invoice);
 
-           /* $params = array(
-                'Id' => $invoice['Id'],
-                'Fetch' => true,
-                'Status' => true
-            );*/
-
             if($result['status'] == false) {
-               // $params['Status'] = false;
-               // $this->update($params);
                 continue;
             }
 
             $resultUpdate = $this->updateTransaction(array(
                 'transaction_id' => $result['data']['TransactionID'],
-                'dbflex_id' => $invoice['Id']
+                'dbflex_id' => $invoice['@id']
             ));
 
             if(!$resultUpdate) {
                 continue;
             }
 
-           // $params['TransactionID'] = $result['data']['TransactionID'];
-            //$this->update($params);
         }
 
         return true;
@@ -365,20 +349,22 @@ class InvoiceModel extends BaseModel
         $api->login($this->username,$this->password);
 
         $arrKeys = array();
+
         foreach($params as $key=>$item) {
             if($key!="Id") {
                 $arrKeys[] = $key;
             }
         }
 
-        $ds = $api->Retrieve("Transaction", $arrKeys, array($params['Id']));
-        foreach($params as $key=>$item) {
+        $ds = $api->Retrieve("ABItech Invoice", $arrKeys, array($params['Id']));
+
+       foreach($params as $key=>$item) {
             if($key!="Id") {
                 $ds->Rows[0][$key] = $item;
             }
         }
 
-        $api->Update('Transaction',$ds);
+        $api->Update('ABItech Invoice',$ds);
 
         $api->Logout();
 
@@ -428,12 +414,20 @@ class InvoiceModel extends BaseModel
                 continue;
             }
 
-            $result = $this->update(array(
+            $mappings= $this->model->getMaps();
+            $mappingResult = array();
+            foreach($mappings as $map) {
+                $mappingResult[$map->keymap] = $map->valuemap;
+            }
+
+            $data = array(
                 'Id' => $item->dbflex_id,
-                'Fetch' => true,
-                'Status' => $resultTransactions['TransactionStatus'],
-                'TransactionID' => $item->transaction_id
-            ));
+                $mappingResult['Fetch'] => false,
+                $mappingResult['Status'] => $resultTransactions['TransactionStatus'] == true ? "Paid" : "Not Paid",
+                $mappingResult['TransactionID'] => $item->transaction_id
+            );
+
+            $result = $this->update($data);
 
             if($result) {
                 $this->updateStatusTransaction($item->id);

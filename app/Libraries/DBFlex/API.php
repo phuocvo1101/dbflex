@@ -63,7 +63,6 @@ class API
 		{
 			$url = $domain; $options = $appId;
 		}
-
 		$r = array("features" => SOAP_SINGLE_ELEMENT_ARRAYS /*"location" => $url, "uri" => self::api_ns*/);
 		if($options != null) $r += $options;
 		$this->soap = new \SoapClient($url . "?wsdl", $r);
