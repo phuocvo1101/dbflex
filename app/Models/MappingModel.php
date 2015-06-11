@@ -35,6 +35,18 @@ class MappingModel extends BaseModel
         $result= $this->database->loadAllRows();
         return $result;
     }
+    public function getSetting()
+    {
+        $key= "transaction_table";
+        $sql = 'SELECT * FROM settings where `key`=?';
+        $this->database->setQuery($sql);
+        $arr= array(
+            array($key,\PDO::PARAM_STR )
+        );
+        $settings = $this->database->loadRow($arr);
+       // var_dump($settings);die();
+        return $settings;
+    }
     public function createMap($data)
     {
        // var_dump($data);die();
