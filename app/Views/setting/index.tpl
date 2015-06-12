@@ -99,6 +99,14 @@
                                         </div>
                                     </div>
 
+                                    <div class="form-group ">
+                                        <label for="curl" class="control-label col-lg-2">Factor:</label>
+                                        <div class="col-lg-10">
+                                            <input class="form-control " value="{if $settings.factor}{$settings.factor}{/if}"  id="factor" type="text" name="factor">
+                                        </div>
+                                    </div>
+
+
                                     <div class="form-group">
                                         <div class="col-lg-offset-2 col-lg-10">
                                             <button class="btn btn-danger" name="subFormSetting" id="subFormSetting" type="submit">Save</button>

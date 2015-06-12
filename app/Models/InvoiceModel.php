@@ -20,13 +20,15 @@ class InvoiceModel extends BaseModel
     private $dbflexUrl = '';
     private $model;
 
+    private $settingModel;
+
     public function __construct()
     {
         parent::__construct();
         $this->database = new Database();
-        $settingModel = new SettingModel();
+        $this->settingModel = new SettingModel();
         $this->model = new MappingModel();
-        $settings = $settingModel->getSettings();
+        $settings =  $this->settingModel->getSettings();
         if (isset($settings['dbflex_user'])) {
             $this->username = $settings['dbflex_user'];
         }
@@ -208,6 +210,11 @@ class InvoiceModel extends BaseModel
         $request->Payment->InvoiceReference = isset($invoice[$mappingResult['Payment.InvoiceReference']])   && !empty($invoice[$mappingResult['Payment.InvoiceReference']]) ? $invoice[$mappingResult['Payment.InvoiceReference']] : null;
         $request->Payment->CurrencyCode = isset($invoice[$mappingResult['Payment.CurrencyCode']])   && !empty($invoice[$mappingResult['Payment.CurrencyCode']]) ? $invoice[$mappingResult['Payment.CurrencyCode']] : '';
 
+        $setting = $this->settingModel->getFactorSetting();
+
+        if($setting!=null) {
+            $request->Payment->TotalAmount = $request->Payment->TotalAmount*$setting->value;
+        }
 
         $request->Method = 'ProcessPayment';
         $request->TransactionType = 'Purchase';

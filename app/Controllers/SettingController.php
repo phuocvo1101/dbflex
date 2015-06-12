@@ -58,6 +58,12 @@ class SettingController extends BaseController implements IBaseController{
                 $flag= false;
                 $message = 'Eway AppID  is not empty!';
             }
+
+            if(!isset($_POST['factor']) || empty($_POST['factor'])) {
+                $flag= false;
+                $message = 'Factor  is not empty!';
+            }
+
             if(!isset($_POST['cronjob_interval']) || empty($_POST['cronjob_interval'])) {
                 $flag= false;
                 $message = 'Cronjob Interval Time  is not empty!';
