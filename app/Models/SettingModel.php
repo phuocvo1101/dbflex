@@ -59,6 +59,19 @@ class SettingModel extends  BaseModel
         // var_dump($settings);die();
         return $settings;
     }
+
+    public function getFactorSetting()
+    {
+        $key= "factor";
+        $sql = 'SELECT * FROM settings where `key`=?';
+        $this->database->setQuery($sql);
+        $arr= array(
+            array($key,\PDO::PARAM_STR )
+        );
+        $settings = $this->database->loadRow($arr);
+        // var_dump($settings);die();
+        return $settings;
+    }
     public function updateTransaction($value)
     {
         $key= 'transaction_table';
