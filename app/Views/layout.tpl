@@ -85,6 +85,20 @@
                     <span>Mappings</span>
                 </a>
             </li>
+
+            <li>
+                <a  href="index.php?controller=mapping&action=invoice">
+                    <i class="fa fa-tasks"></i>
+                    <span>Mappings For Invoice</span>
+                </a>
+            </li>
+
+            <li>
+                <a  href="index.php?controller=mapping&action=customer">
+                    <i class="fa fa-tasks"></i>
+                    <span>Mappings For Customer</span>
+                </a>
+            </li>
             
             <!--multi level menu end-->
 

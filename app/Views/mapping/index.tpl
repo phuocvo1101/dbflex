@@ -40,7 +40,7 @@
                                     <tr>
                                         <th>key</th>
                                         <th>value</th>
-
+                                        <th>action</th>
                                     </tr>
                                     </thead>
                                     <tbody>

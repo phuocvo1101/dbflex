@@ -18,9 +18,9 @@ class MappingModel extends BaseModel
         $this->database = new Database();
     }
 
-    public function getMap($id)
+    public function getMap($id,$table='mappings')
     {
-        $query= 'select * from mappings WHERE id=?';
+        $query= 'select * from '.$table.' WHERE id=?';
         $this->database->setQuery($query);
         $arr= array(
             array($id,\PDO::PARAM_INT )
@@ -28,16 +28,16 @@ class MappingModel extends BaseModel
         $result= $this->database->loadAllRows($arr);
         return $result;
     }
-    public function getMaps()
+    public function getMaps($table='mappings')
     {
-        $query= 'select * from mappings';
+        $query= 'select * from '.$table;
         $this->database->setQuery($query);
         $result= $this->database->loadAllRows();
         return $result;
     }
-    public function getSetting()
+    public function getSetting($key ="transaction_table")
     {
-        $key= "transaction_table";
+
         $sql = 'SELECT * FROM settings where `key`=?';
         $this->database->setQuery($sql);
         $arr= array(
@@ -47,10 +47,10 @@ class MappingModel extends BaseModel
        // var_dump($settings);die();
         return $settings;
     }
-    public function createMap($data)
+    public function createMap($data,$table='mappings')
     {
        // var_dump($data);die();
-        $query= 'INSERT INTO mappings(keymap,valuemap) values(?,?)';
+        $query= 'INSERT INTO '.$table.'(keymap,valuemap) values(?,?)';
         $this->database->setQuery($query);
         $arr=array(
             array($data['key'],\PDO::PARAM_STR),
@@ -63,11 +63,11 @@ class MappingModel extends BaseModel
         return true;
 
     }
-    public function updateMap($data,$id)
+    public function updateMap($data,$id,$table='mappings')
     {
        // var_dump($data) ;die();
        // echo $data['key'];die();
-        $query = 'UPDATE mappings SET keymap=?,valuemap=? WHERE id=?';
+        $query = 'UPDATE '.$table.' SET keymap=?,valuemap=? WHERE id=?';
         $this->database->setQuery($query);
         $arr=array(
             array($data['key'],\PDO::PARAM_STR),
@@ -81,9 +81,9 @@ class MappingModel extends BaseModel
         return true;
 
     }
-    public function deleteMap($id)
+    public function deleteMap($id,$table='mappings')
     {
-        $query= 'DELETE FROM mappings WHERE id=?';
+        $query= 'DELETE FROM '.$table.' WHERE id=?';
         $this->database->setQuery($query);
         $result = $this->database->execute(array(
             array($id,\PDO::PARAM_INT)
