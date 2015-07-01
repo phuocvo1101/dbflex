@@ -47,9 +47,8 @@ class SettingModel extends  BaseModel
         }
         return true;
     }
-    public function getSetting()
+    public function getSetting($key= "transaction_table")
     {
-        $key= "transaction_table";
         $sql = 'SELECT * FROM settings where `key`=?';
         $this->database->setQuery($sql);
         $arr= array(
@@ -72,9 +71,8 @@ class SettingModel extends  BaseModel
         // var_dump($settings);die();
         return $settings;
     }
-    public function updateTransaction($value)
+    public function updateTransaction($value,$key= 'transaction_table')
     {
-        $key= 'transaction_table';
 
         $sql = 'UPDATE `settings` SET `value`=? WHERE `key`= ? ';
 

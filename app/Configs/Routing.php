@@ -57,6 +57,21 @@ class Routing {
                 case 'changepassword':
                     $this->content = $this->baseController->changePassword();
                     break;
+                case 'customer':
+                    $this->content = $this->baseController->customerAction();
+                    break;
+                case 'invoice':
+                    $this->content = $this->baseController->invoiceAction();
+                    break;
+                case 'updatecustomer':
+                    $this->content = $this->baseController->updateCustomerAction();
+                    break;
+                case 'createcustomer':
+                    $this->content = $this->baseController->createCustomerAction();
+                    break;
+                case 'deletecustomer':
+                    $this->content = $this->baseController->deleteCustomerAction();
+                    break;
                 default:
                     $this->content =$this->baseController->indexAction();
                     break;

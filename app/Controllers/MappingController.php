@@ -72,7 +72,64 @@ class MappingController extends  BaseController implements IBaseController
         $id= $_GET['id'];
         $this->model->deleteMap($id);
         return $this->indexAction();
+    }
 
+    public function invoiceAction()
+    {
 
+    }
+
+    public function customerAction()
+    {
+        $setting= $this->model->getSetting('customer_table');
+        $mappings= $this->model->getMaps('customer_mappings');
+        // echo "<pre>".print_r($mappings,true)."</pre>";die();
+        $this->template->assign('maps',$mappings);
+        $this->template->assign('setting',$setting);
+        return $this->template->fetch('mapping/customer.tpl');
+    }
+
+    public function createCustomerAction()
+    {
+        if(isset($_POST['create'])){
+
+            $key= isset($_POST['key'])?$_POST['key']:'';
+            $value= isset($_POST['value'])?$_POST['value']:'';
+            $data= array(
+                'key'=>$key,
+                'value'=>$value,
+            );
+            $this->model->createMap($data,'customer_mappings');
+            return $this->customerAction();
+        }
+        return $this->template->fetch('mapping/createcustomer.tpl');
+    }
+
+    public function deleteCustomerAction()
+    {
+        $id= $_GET['id'];
+        $this->model->deleteMap($id,'customer_mappings');
+        return $this->customerAction();
+    }
+
+    public function updateCustomerAction()
+    {
+        $id= $_GET['id'];
+        if(isset($_POST['update'])){
+            $key= isset($_POST['key'])?$_POST['key']:'';
+            $value= isset($_POST['value'])?$_POST['value']:'';
+            $data= array(
+                'key'=>$key,
+                'value'=>$value,
+            );
+            $this->model->updateMap($data,$id,'customer_mappings');
+            return $this->customerAction();
+        }
+
+        $map= $this->model->getMap($id,'customer_mappings');
+        // echo '<pre>'.print_r($map,true).'</pre>';die();
+        $this->template->assign('map',$map);
+        return $this->template->fetch('mapping/updatecustomer.tpl');
+        // echo 'update test';
     }
 } 

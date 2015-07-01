@@ -104,4 +104,19 @@ class SettingController extends BaseController implements IBaseController{
        return  $this->template->fetch('setting/update.tpl');
 
     }
+
+    public function updateCustomerAction()
+    {
+
+        if(isset($_POST['update'])){
+            $value=$_POST['transaction'];
+            // echo $value;die();
+            $this->model->updateTransaction($value,'customer_table');
+            header('location:index.php?controller=mapping&action=customer');
+        }
+        $setting= $this->model->getSetting('customer_table');
+        $this->template->assign('setting',$setting);
+        return  $this->template->fetch('setting/updatecustomer.tpl');
+
+    }
 } 
